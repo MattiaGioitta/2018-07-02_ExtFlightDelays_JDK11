@@ -1,9 +1,12 @@
 package it.polito.tdp.extflightdelays;
 
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
 
+import it.polito.tdp.extflightdelays.model.Airport;
 import it.polito.tdp.extflightdelays.model.Model;
+import it.polito.tdp.extflightdelays.model.Vicino;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -33,7 +36,7 @@ public class FXMLController {
     private Button btnAnalizza;
 
     @FXML
-    private ComboBox<?> cmbBoxAeroportoPartenza;
+    private ComboBox<Airport> cmbBoxAeroportoPartenza;
 
     @FXML
     private Button btnAeroportiConnessi;
@@ -46,12 +49,40 @@ public class FXMLController {
 
     @FXML
     void doAnalizzaAeroporti(ActionEvent event) {
+    	this.txtResult.clear();
+    	Integer x;
+    	try {
+    		x = Integer.parseInt(this.voliMinimo.getText());
+    		this.model.createGraph(x);
+    		this.txtResult.appendText("Grafo creato con:\n");
+    		this.txtResult.appendText(String.format("#Vertici: %d\n#Archi: %d\n",this.model.nVertici(), this.model.nArchi()));
+    		this.cmbBoxAeroportoPartenza.getItems().addAll(this.model.getVertici());
+    	}catch(NumberFormatException e) {    
+
+    		this.txtResult.setText("Inserisci un numero valido per i voli minimo");
+    		return;
+    	}
 
     }
 
     @FXML
     void doCalcolaAeroportiConnessi(ActionEvent event) {
+    	this.txtResult.clear();
+    	Airport scelto = this.cmbBoxAeroportoPartenza.getValue();
+    	if(scelto == null) {
+    		this.txtResult.setText("Scegli un aeroporto");
+    		return;
+    	}
+    	List<Vicino> vicini = this.model.getVicini(scelto);
+    	if(vicini.size() == 0 || vicini == null) {
+    		this.txtResult.setText("nessun vicino per l'aeroporto scelto");
+    		return;
+    	}
+    	for(Vicino v : vicini) {
+    		this.txtResult.appendText(v.toString()+"\n");
+    	}
 
+    	
     }
 
     @FXML

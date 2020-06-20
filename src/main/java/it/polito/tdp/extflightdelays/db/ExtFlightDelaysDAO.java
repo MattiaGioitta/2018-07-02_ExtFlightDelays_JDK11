@@ -7,7 +7,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
+import it.polito.tdp.extflightdelays.model.Adiacenza;
 import it.polito.tdp.extflightdelays.model.Airline;
 import it.polito.tdp.extflightdelays.model.Airport;
 import it.polito.tdp.extflightdelays.model.Flight;
@@ -37,9 +39,9 @@ public class ExtFlightDelaysDAO {
 		}
 	}
 
-	public List<Airport> loadAllAirports() {
+	public void loadAllAirports(Map<Integer, Airport> idMap) {
 		String sql = "SELECT * FROM airports";
-		List<Airport> result = new ArrayList<Airport>();
+		
 
 		try {
 			Connection conn = DBConnect.getConnection();
@@ -50,11 +52,11 @@ public class ExtFlightDelaysDAO {
 				Airport airport = new Airport(rs.getInt("ID"), rs.getString("IATA_CODE"), rs.getString("AIRPORT"),
 						rs.getString("CITY"), rs.getString("STATE"), rs.getString("COUNTRY"), rs.getDouble("LATITUDE"),
 						rs.getDouble("LONGITUDE"), rs.getDouble("TIMEZONE_OFFSET"));
-				result.add(airport);
+				idMap.put(airport.getId(), airport);
 			}
 
 			conn.close();
-			return result;
+			
 
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -90,6 +92,45 @@ public class ExtFlightDelaysDAO {
 			System.out.println("Errore connessione al database");
 			throw new RuntimeException("Error Connection Database");
 		}
+	}
+
+	public List<Adiacenza> getAdiacenze(Integer x, Map<Integer, Airport> idMap) {
+		final String sql = "SELECT f.ORIGIN_AIRPORT_ID AS a1,f.DESTINATION_AIRPORT_ID AS a2,AVG(f.ELAPSED_TIME) AS peso " + 
+				"FROM flights AS f " + 
+				"WHERE f.ORIGIN_AIRPORT_ID IN(SELECT a.ID " + 
+				"FROM airports AS a,flights AS f " + 
+				"WHERE a.ID=f.ORIGIN_AIRPORT_ID " + 
+				"OR a.ID=f.DESTINATION_AIRPORT_ID " + 
+				"GROUP BY a.ID " + 
+				"HAVING SUM(a.ID)>=?) " + 
+				"AND f.DESTINATION_AIRPORT_ID IN (SELECT a.ID " + 
+				"FROM airports AS a,flights AS f " + 
+				"WHERE a.ID=f.ORIGIN_AIRPORT_ID " + 
+				"OR a.ID=f.DESTINATION_AIRPORT_ID " + 
+				"GROUP BY a.ID " + 
+				"HAVING SUM(a.ID)>=?) " + 
+				"GROUP BY f.ORIGIN_AIRPORT_ID,f.DESTINATION_AIRPORT_ID";
+		List<Adiacenza> lista = new ArrayList<>();
+		try {
+			Connection conn = DBConnect.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, x);
+			st.setInt(2, x);
+			ResultSet rs = st.executeQuery();
+			
+			while(rs.next()) {
+				Adiacenza a = new Adiacenza(idMap.get(rs.getInt("a1")),idMap.get(rs.getInt("a2")),rs.getDouble("peso"));
+				lista.add(a);
+			}
+			
+			conn.close();
+			return lista;
+		}catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Errore connessione al database");
+			throw new RuntimeException("Error Connection Database");
+		}
+		
 	}
 }
 
