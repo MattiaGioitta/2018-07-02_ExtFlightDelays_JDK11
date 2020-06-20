@@ -87,6 +87,30 @@ public class FXMLController {
 
     @FXML
     void doCercaItinerario(ActionEvent event) {
+    	this.txtResult.clear();
+    	Airport scelto = this.cmbBoxAeroportoPartenza.getValue();
+    	if(scelto == null) {
+    		this.txtResult.setText("Scegli un aeroporto");
+    		return;
+    	}
+    	Integer oreVolo;
+    	try {
+    		oreVolo = Integer.parseInt(this.numeroOreTxtInput.getText());
+    		this.model.cercaItinerario(scelto,oreVolo);
+    		List<Airport> cammino = this.model.getCammino();
+    		if(cammino.size()==0 || cammino == null) {
+    			this.txtResult.setText("Nessun cammino trovato");
+        		return;
+    		}
+    		this.txtResult.appendText(String.format("Cammino con numero ore complessive: %.2f\n", this.model.getOreCOmplessive()));
+    		for(Airport a : cammino) {
+    			this.txtResult.appendText(a.toString()+"\n");
+    		}
+    	}catch(NumberFormatException e) {  
+    		this.txtResult.setText("Inserisci un numero valido per le ore del volo");
+    		return;
+    	}
+    	
 
     }
 

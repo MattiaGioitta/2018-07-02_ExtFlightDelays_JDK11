@@ -18,6 +18,8 @@ public class Model {
 	private ExtFlightDelaysDAO dao;
 	private Graph<Airport,DefaultWeightedEdge> graph;
 	private Map<Integer,Airport> idMap;
+	private List<Airport> bestPath;
+	private double bestPeso;
 	
 	public Model() {
 		this.dao = new ExtFlightDelaysDAO();
@@ -70,6 +72,66 @@ public class Model {
 		}
 		Collections.sort(lista);
 		return lista;
+	}
+
+
+	public void cercaItinerario(Airport scelto, Integer oreVolo) {
+		this.bestPath = new ArrayList<>();
+		this.bestPeso = 0.0;
+		List<Airport> parziale = new ArrayList<>();
+		parziale.add(scelto);
+		cerca(parziale,scelto,oreVolo);
+		
+	}
+
+
+	private void cerca(List<Airport> parziale, Airport scelto, Integer oreVolo) {
+		double pesoCorrente = calcolaPeso(parziale);
+		if(pesoCorrente>oreVolo) {
+			return;
+		}
+		if(pesoCorrente>this.bestPeso  && pesoCorrente<=oreVolo) {
+			this.bestPath = new ArrayList<>(parziale);
+			this.bestPeso = calcolaPeso(parziale);
+		}
+		//se l'ultimo non è uguale a scelto, deve ritornare indietro
+		if(parziale.get(parziale.size()-1).compareTo(scelto) != 0) {
+			parziale.add(scelto);
+			cerca(parziale,scelto,oreVolo);
+			parziale.remove(parziale.size()-1);			
+		}
+		else {
+			for(Airport a : Graphs.neighborListOf(this.graph, scelto)) {
+				if(!parziale.contains(a)) {
+					parziale.add(a);
+					cerca(parziale,scelto,oreVolo);
+					parziale.remove(parziale.size()-1);
+				}
+			}
+		}
+		
+		
+	}
+
+
+	private double calcolaPeso(List<Airport> parziale) {
+		double peso = 0.0;
+		for(int i = 1;i<parziale.size();i++) {
+			peso+=this.graph.getEdgeWeight(this.graph.getEdge(parziale.get(i-1), parziale.get(i)));
+		}
+		return peso;
+	}
+
+
+	public List<Airport> getCammino() {
+		// TODO Auto-generated method stub
+		return this.bestPath;
+	}
+
+
+	public Double getOreCOmplessive() {
+		// TODO Auto-generated method stub
+		return this.calcolaPeso(bestPath);
 	}
 
 }
