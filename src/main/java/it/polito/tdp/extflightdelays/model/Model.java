@@ -61,6 +61,7 @@ public class Model {
 		for(Airport a: this.graph.vertexSet()) {
 			list.add(a);
 		}
+		Collections.sort(list);
 		return list;
 	}
 
